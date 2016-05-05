@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import configparser
+import yaml
 import pymysql.cursors
 
 # STATIC GLOBAL OBJECT
@@ -77,19 +77,19 @@ def db_connect():
     # USE db_connection
     global db_connection
 
-    #####
-    # How to use 'ini'
-    # see:
-    # http://docs.python.jp/2/library/configparser.html
-    config = configparser.RawConfigParser()
-    config.read('db_setup.cfg')
-    hostname=config.get('DB', 'host')
-    username=config.get('DB', 'user')
-    password=config.get('DB', 'pass')
-    database=config.get('DB', 'dbname')
-    charset=config.get('DB', 'charset')
-
     try:
+        # see:
+        # http://blog.panicblanket.com/archives/1076
+        f = open('setup.yml', 'r')
+        data = yaml.load(f)
+        f.close()
+
+        hostname=data['DB']['host']
+        username=data['DB']['user']
+        password=data['DB']['pass']
+        database=data['DB']['dbname']
+        charset =data['DB']['charset']
+
         ###
         # see:
         # http://www.yoheim.net/blog.php?q=20151102
@@ -125,6 +125,13 @@ def db_connect():
     #except ProgrammingError as e:
     #    print("Caught a Programming Error:")
     #    print(e)
+
+    except IOError as e :
+        print("Config file \"{0}\" is not found.".format(e))
+        raise
+    except KeyError as e :
+        print("Config key \"{0}\" is not found.".format(e))
+        raise
     except:
         import sys
         print("[failure] Unexpected error:", sys.exc_info()[0])
@@ -140,6 +147,7 @@ def db_all():
         db_create()
     except:
         print("Error is occured..")
+        quit()
     finally:
         db_connection.close()
 
