@@ -14,24 +14,31 @@ sql_connect = (
 sql_create = [
         (
             " CREATE TABLE IF NOT EXISTS dictionary"
-            " (dictionary_id int, word varchar(100), UNIQUE(dictionary_id))"
+            " (dictionary_id int NOT NULL AUTO_INCREMENT, word varchar(100) NOT NULL, PRIMARY KEY(dictionary_id))"
             ),
         (
             " CREATE TABLE IF NOT EXISTS tweet"
-            " (twitter_id int, tweet varchar(1000), UNIQUE(twitter_id))"
+            " (twitter_id int NOT NULL AUTO_INCREMENT, tweet json NOT NULL, PRIMARY KEY(twitter_id), UNIQUE(tweet))"
             ),
         (
             " CREATE TABLE IF NOT EXISTS emotional_tweet"
-            " (dictionary_id int, twitter_id int, val int, UNIQUE(dictionary_id, twitter_id))"
+            " (dictionary_id int, twitter_id int, val int, PRIMARY KEY(dictionary_id, twitter_id))"
             ),
         (
             " CREATE TABLE IF NOT EXISTS emotional_word"
-            " (twitter_id int, word varchar(100), val int, UNIQUE(twitter_id))"
+            " (twitter_id int, word varchar(100), val int, PRIMARY KEY(twitter_id))"
             )
 ]
 
 sql_delete = (
         "DROP TABLE IF EXISTS dictionary, tweet, emotional_tweet, emotional_word"
+)
+
+sql_insert = (
+        "INSERT INTO tweet (tweet) VALUES ('{0}')"
+)
+sql_insert2 = (
+        "INSERT INTO tweet (tweet) VALUES (%s)"
 )
 
 def db_delete(isExecute=False):
@@ -71,6 +78,32 @@ def db_create():
 
     return;
 # End of db_create
+
+def db_insert_to_tweet(tweets):
+    if db_connection is None:
+        return
+
+    try:
+        with db_connection.cursor() as cursor:
+            for tweet in tweets:
+                #sql = sql_insert.format(tweet)
+                #print("[execute] SQL:\n\n{0}\n\n".format(sql));
+                #cursor.execute(sql)
+
+                sql = sql_insert2
+                cursor.execute(sql, (tweet,))
+                print("[success] SQL '{0}' is successed.".format(sql));
+    except Exception as e:
+        import sys
+        print("[failure] -- db_insert to tweet --")
+        #print("[failure] Unexpected error:", sys.exc_info()[0])
+        print("[failure] Unexpected error:", e)
+        raise
+
+    return;
+#-End-of-db_insert_to_tweet()-
+
+
 
 def db_connect():
 
@@ -138,6 +171,7 @@ def db_connect():
         raise
 
     return;
+#-End-of-db_connect()-
 
 def db_all():
 
