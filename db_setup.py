@@ -35,10 +35,10 @@ sql_delete = (
 )
 
 sql_insert = (
-        "INSERT INTO tweet (tweet) VALUES ('{0}')"
+        "INSERT INTO tweet(tweet) VALUES('{0}')"
 )
 sql_insert2 = (
-        "INSERT INTO tweet (tweet) VALUES (%s)"
+        "INSERT INTO tweet(tweet) VALUES(%s)"
 )
 
 def db_delete(isExecute=False):
@@ -90,15 +90,16 @@ def db_insert_to_tweet(tweets):
                 #print("[execute] SQL:\n\n{0}\n\n".format(sql));
                 #cursor.execute(sql)
 
-                sql = sql_insert2
-                cursor.execute(sql, (tweet,))
-                print("[success] SQL '{0}' is successed.".format(sql));
+                cursor.execute(sql_insert2, (tweet,))
+                print("[success] SQL '{0}' is successed.".format(sql_insert2));
     except Exception as e:
         import sys
         print("[failure] -- db_insert to tweet --")
         #print("[failure] Unexpected error:", sys.exc_info()[0])
         print("[failure] Unexpected error:", e)
         raise
+    finally:
+        db_connection.commit()
 
     return;
 #-End-of-db_insert_to_tweet()-

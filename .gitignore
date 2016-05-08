@@ -63,3 +63,6 @@ target/
 
 #db configuration
 setup.yml
+
+#VIM swp file
+*.swp
