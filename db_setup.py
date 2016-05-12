@@ -14,19 +14,24 @@ sql_connect = (
 sql_create = [
         (
             " CREATE TABLE IF NOT EXISTS dictionary"
-            " (dictionary_id int NOT NULL AUTO_INCREMENT, word varchar(100) NOT NULL, PRIMARY KEY(dictionary_id))"
+            " (dictionary_id int NOT NULL AUTO_INCREMENT, dictionary_name varchar(100) NOT NULL, word varchar(100) NOT NULL, PRIMARY KEY(dictionary_id))"
+            " DEFAULT CHARSET=utf8"
             ),
         (
             " CREATE TABLE IF NOT EXISTS tweet"
-            " (twitter_id int NOT NULL AUTO_INCREMENT, tweet json NOT NULL, PRIMARY KEY(twitter_id), UNIQUE(tweet))"
+            #" (twitter_id int NOT NULL AUTO_INCREMENT, tweet json NOT NULL, PRIMARY KEY(twitter_id), UNIQUE(tweet))"
+            " (twitter_id int NOT NULL AUTO_INCREMENT, tweet json NOT NULL, PRIMARY KEY(twitter_id))"
+            " DEFAULT CHARSET=utf8"
             ),
         (
             " CREATE TABLE IF NOT EXISTS emotional_tweet"
             " (dictionary_id int, twitter_id int, val int, PRIMARY KEY(dictionary_id, twitter_id))"
+            " DEFAULT CHARSET=utf8"
             ),
         (
             " CREATE TABLE IF NOT EXISTS emotional_word"
             " (twitter_id int, word varchar(100), val int, PRIMARY KEY(twitter_id))"
+            " DEFAULT CHARSET=utf8"
             )
 ]
 
@@ -34,11 +39,11 @@ sql_delete = (
         "DROP TABLE IF EXISTS dictionary, tweet, emotional_tweet, emotional_word"
 )
 
-sql_insert = (
-        "INSERT INTO tweet(tweet) VALUES('{0}')"
-)
-sql_insert2 = (
+sql_insert_to_tweet= (
         "INSERT INTO tweet(tweet) VALUES(%s)"
+)
+sql_insert_to_dict= (
+        "INSERT INTO dictionary(dictionary_name, word) VALUES(%s, %s)"
 )
 
 def db_delete(isExecute=False):
@@ -70,10 +75,11 @@ def db_create():
             for sql in sql_create:
                 cursor.execute(sql)
                 print("[success] SQL '{0}' is successed.".format(sql));
-    except:
+    except Exception as e:
         import sys
         print("[failure] -- db_create --")
         print("[failure] Unexpected error:", sys.exc_info()[0])
+        print("[failure] Unexpected error:", e)
         raise
 
     return;
@@ -86,16 +92,11 @@ def db_insert_to_tweet(tweets):
     try:
         with db_connection.cursor() as cursor:
             for tweet in tweets:
-                #sql = sql_insert.format(tweet)
-                #print("[execute] SQL:\n\n{0}\n\n".format(sql));
-                #cursor.execute(sql)
-
-                cursor.execute(sql_insert2, (tweet,))
-                print("[success] SQL '{0}' is successed.".format(sql_insert2));
+                cursor.execute(sql_insert_to_tweet, (tweet,))
+                print("[success] SQL '{0}' is successed.".format(sql_insert_to_tweet));
     except Exception as e:
         import sys
         print("[failure] -- db_insert to tweet --")
-        #print("[failure] Unexpected error:", sys.exc_info()[0])
         print("[failure] Unexpected error:", e)
         raise
     finally:
@@ -103,6 +104,31 @@ def db_insert_to_tweet(tweets):
 
     return;
 #-End-of-db_insert_to_tweet()-
+
+#
+# TODO: Combine db_insert_*
+#
+
+def db_insert_to_dict(dictionaries):
+    if db_connection is None:
+        return
+
+    try:
+        with db_connection.cursor() as cursor:
+            for key,values in dictionaries.items():
+                for value in values:
+                    cursor.execute(sql_insert_to_dict, (key,value,))
+                    print("[success] SQL '{0}' ({1},{2})is successed.".format(sql_insert_to_dict, key, value));
+    except Exception as e:
+        import sys
+        print("[failure] -- db_insert to tweet --")
+        print("[failure] Unexpected error:", e)
+        raise
+    finally:
+        db_connection.commit()
+
+    return;
+#-End-of-db_insert_to_dict()-
 
 
 
@@ -139,12 +165,16 @@ def db_connect():
         print("[success] Database '{0}' is connected.".format(database))
 
         with db_connection.cursor() as cursor:
-
+            
             # (0) Use a database.
             cursor.execute("USE {0};".format(database))
             print("[success] Use '{0}'.".format(database));
 
-            # (1) Tables are exists?
+            # (1) Change Character Sets
+            cursor.execute("SET CHARACTER_SET_SERVER = UTF8;")
+            cursor.execute("SET CHARACTER_SET_DATABASE = UTF8;")
+
+            # (2) Tables are exists?
             sql = "SHOW TABLES FROM {0};";
             cursor.execute(sql.format("twitter"))
             result = cursor.fetchall()
