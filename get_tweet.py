@@ -12,6 +12,7 @@ import yaml
 from db_setup import db_connection
 from db_setup import db_connect
 from db_setup import db_insert_to_tweet
+from db_setup import db_select_from_dict
 
 # STATIC GLOBAL OBJECT
 api_key         = None 
@@ -50,13 +51,17 @@ def stream_all():
     stream_setup()
 
     #
+    # get searching words from RDS
     #
-    # TODO: Get words from db
-    #
-    #
-    dict_list = ['スロット', '回胴', 'パチスロ', '#スロット', '#回胴', '#パチスロ', '#アニメ']
+    dict_list = []
+    words = db_select_from_dict()
+    for word in words:
+        dict_list.append(word["word"])
     track = ",".join(dict_list)
 
+    #
+    # twitter stream api settings
+    #
     url = "https://stream.twitter.com/1.1/statuses/filter.json"
     auth = OAuth1(api_key, api_secret, access_token, access_secret)
     r = requests.post(url, auth=auth, stream=True, data={"track":track})
@@ -72,11 +77,6 @@ def stream_all():
     for line in r.iter_lines():
         # filter out keep-alive new lines
         if line:
-            #print(json.loads(line.decode()))
-            #tweets.append(json.loads(line.decode()))
-
-            #tweets.append(json.dumps(line.decode()))
-            #print(json.dumps(line.decode()))
 
             print(json.dumps(json.loads(line.decode()), sort_keys=True,))
             tweets.append(json.dumps(json.loads(line.decode()), sort_keys=True,))
@@ -119,7 +119,6 @@ if __name__ == '__main__':
 
     try:
         db_connect()
-        #stream_sample()
         stream_all()
     except:
         print("Error is occured..")

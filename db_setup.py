@@ -45,6 +45,9 @@ sql_insert_to_tweet= (
 sql_insert_to_dict= (
         "INSERT INTO dictionary(dictionary_name, word) VALUES(%s, %s)"
 )
+sql_select_from_dict= (
+        "SELECT * FROM dictionary"
+)
 
 def db_delete(isExecute=False):
     if db_connection is None:
@@ -129,6 +132,29 @@ def db_insert_to_dict(dictionaries):
 
     return;
 #-End-of-db_insert_to_dict()-
+
+def db_select_from_dict():
+    if db_connection is None:
+        return
+
+    try:
+        with db_connection.cursor() as cursor:
+
+            sql = sql_select_from_dict
+            cursor.execute(sql)
+            result = cursor.fetchall()
+            #print("[success] words are '{0}'".format(result))
+
+    except Exception as e:
+        import sys
+        print("[failure] -- db_insert to tweet --")
+        print("[failure] Unexpected error:", e)
+        raise
+    finally:
+        db_connection.commit()
+
+    return result
+#-End-of-db_select_from_dict()-
 
 
 
